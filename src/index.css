@@ -89,11 +89,30 @@ label {
 .top {
   background: var(--marca);
   color: #fff;
-  padding: 14px 20px;
+  padding: 12px 20px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 14px;
   flex-wrap: wrap;
+}
+
+.top-logo {
+  height: 52px;
+  width: auto;
+  max-width: 220px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+  padding: 5px 8px;
+  flex: 0 0 auto;
+  display: block;
+}
+
+.top-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .top h1 {
@@ -427,6 +446,8 @@ tr:hover td { background: #F7F9FC; }
 
 @media (max-width: 640px) {
   .wrap { padding: 14px 12px 40px; }
+  .top { padding: 10px 12px; gap: 10px; }
+  .top-logo { height: 42px; max-width: 160px; }
   .it .cab { flex-wrap: wrap; }
   .sel { width: 100%; margin-top: 6px; }
   .sel button { flex: 1; }

@@ -1,3 +1,4 @@
+import { LOGO_SRC } from '../components/BrandLogo/BrandLogo';
 import { itemsDeServicio } from '../data/rondas';
 import type { Hallazgo, Ronda } from '../types';
 import { conteo, nivel } from '../utils/calculations';
@@ -29,9 +30,16 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[]): boolean {
   .kv b{color:#4A5A6A;font-weight:600}
   .firma{margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:44px}
   .firma div{border-top:1px solid #102033;padding-top:5px;font-size:11.5px;text-align:center}
+  .acta-cab{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .acta-cab img{height:58px;width:auto;max-width:240px;object-fit:contain}
   @media print{body{margin:0}}</style>
-  <h1>Acta de ronda de seguridad del paciente</h1>
-  <div class="sub">Guía Técnica de Buenas Prácticas para la Seguridad del Paciente (MinSalud) · Resolución 3100 de 2019</div>
+  <div class="acta-cab">
+    <img src="${esc(`${window.location.origin}${LOGO_SRC}`)}" alt="Clínica Piedecuesta S.A.">
+    <div>
+      <h1>Acta de ronda de seguridad del paciente</h1>
+      <div class="sub">Guía Técnica de Buenas Prácticas para la Seguridad del Paciente (MinSalud) · Resolución 3100 de 2019</div>
+    </div>
+  </div>
   <div class="kv">
     <b>Identificación de la ronda</b><span>${esc(ronda.id)}</span>
     <b>Servicio auditado</b><span>${esc(ronda.servicio)}</span>
