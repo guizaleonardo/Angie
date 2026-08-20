@@ -92,6 +92,7 @@ function normalizeHallazgo(raw: unknown): Hallazgo | null {
     estado,
     fechaCierre: String(source.fechaCierre || ''),
     evidencia: String(source.evidencia || ''),
+    sugerido: Boolean(source.sugerido),
   };
 }
 

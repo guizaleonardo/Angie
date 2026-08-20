@@ -50,7 +50,7 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[]): boolean {
     : '<p>No se identificaron no conformidades en esta ronda.</p>'}
   <h2>Plan de mejoramiento 5W1H (${hs.length})</h2>
   ${hs.length ? hs.map((x) => `<table style="margin-bottom:12px"><tbody>
-      <tr><th style="width:120px">Plan</th><td>${esc(x.id)} · Ítem ${esc(x.itemId)} · Criticidad ${esc(x.criticidad)} · ${esc(x.estado)}</td></tr>
+      <tr><th style="width:120px">Plan</th><td>${esc(x.id)} · Ítem ${esc(x.itemId)} · Criticidad ${esc(x.criticidad)} · ${esc(x.estado)}${x.sugerido ? ' <b style="color:#B3261E">— PROPUESTA SIN VALIDAR</b>' : ''}</td></tr>
       <tr><th>Hallazgo</th><td>${esc(x.desc) || '—'}</td></tr>
       <tr><th>¿Qué?</th><td>${esc(x.que) || '—'}</td></tr>
       <tr><th>¿Por qué?</th><td>${esc(x.porque) || '—'}</td></tr>

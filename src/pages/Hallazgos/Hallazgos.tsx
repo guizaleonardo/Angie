@@ -9,7 +9,7 @@ import { useToast } from '../../context/ToastContext';
 import { itemPorId } from '../../data/rondas';
 import type { FiltroHallazgos, Hallazgo } from '../../types';
 import { CRITICIDADES, ESTADOS_HALLAZGO } from '../../types';
-import { vencido } from '../../utils/calculations';
+import { planesSinValidar, vencido } from '../../utils/calculations';
 import { fmtF } from '../../utils/format';
 
 const FILTROS: Array<[FiltroHallazgos, string]> = [
@@ -21,7 +21,7 @@ const FILTROS: Array<[FiltroHallazgos, string]> = [
 const ORDEN_CRITICIDAD: Record<string, number> = { Alta: 0, Media: 1, Baja: 2 };
 
 export function Hallazgos() {
-  const { data, generarPendientes, setHallazgoCampo, borrarHallazgo } = useApp();
+  const { data, generarPendientes, setHallazgoCampo, borrarHallazgo, validarHallazgo, restaurarPropuesta } = useApp();
   const { toast } = useToast();
   const [filtro, setFiltro] = useState<FiltroHallazgos>('abiertos');
 
@@ -31,6 +31,7 @@ export function Hallazgos() {
   );
   const sinPlan = nc - data.hallazgos.length;
   const vencidos = data.hallazgos.filter((h) => vencido(h)).length;
+  const sinValidar = planesSinValidar(data.hallazgos);
 
   const lista = useMemo(() => {
     let items = data.hallazgos;
@@ -46,7 +47,7 @@ export function Hallazgos() {
 
   const onGenerar = () => {
     const n = generarPendientes();
-    toast(n ? `${n} plan(es) creado(s) desde las no conformidades` : 'Todas las no conformidades ya tienen plan');
+    toast(n ? `${n} plan(es) generado(s) — revíselos y valídelos` : 'Todas las no conformidades ya tienen plan');
   };
 
   return (
@@ -60,13 +61,21 @@ export function Hallazgos() {
           <KPI value={data.hallazgos.filter((x) => x.estado === 'En ejecución').length} label="En ejecución" />
           <KPI value={data.hallazgos.filter((x) => x.estado === 'Cerrado').length} label="Cerrados" />
           <KPI value={vencidos} label="Vencidos" variant={vencidos ? 'riesgo' : ''} />
+          <KPI value={sinValidar} label="Sin validar" variant={sinValidar ? 'riesgo' : ''} />
         </div>
         {sinPlan > 0 ? (
           <div className="aviso" style={{ marginTop: 12 }}>
             Hay {sinPlan} no conformidad(es) sin plan de mejoramiento.
             <button type="button" className="btn sm ghost" style={{ marginLeft: 8 }} onClick={onGenerar}>
-              Crear los planes faltantes
+              Generar los planes faltantes
             </button>
+          </div>
+        ) : null}
+        {sinValidar ? (
+          <div className="aviso" style={{ marginTop: 12 }}>
+            <b>{sinValidar} plan(es) siguen como propuesta automática.</b>
+            {' '}La acción y el plazo salen de la biblioteca de la herramienta, no del análisis de esta ronda: ajuste la causa a lo que observó en sitio,
+            confirme responsable y fecha, y valide cada plan. Mientras no lo haga, el acta los imprime marcados como propuesta sin validar.
           </div>
         ) : null}
         <div className="row" style={{ marginTop: 12 }}>
@@ -96,6 +105,8 @@ export function Hallazgos() {
             hallazgo={hallazgo}
             onChange={setHallazgoCampo}
             onDelete={() => borrarHallazgo(hallazgo.id)}
+            onValidar={() => validarHallazgo(hallazgo.id)}
+            onRestaurar={() => restaurarPropuesta(hallazgo.id)}
           />
         ))
       )}
@@ -107,14 +118,18 @@ function HallazgoCard({
   hallazgo,
   onChange,
   onDelete,
+  onValidar,
+  onRestaurar,
 }: {
   hallazgo: Hallazgo;
-  onChange: (id: string, campo: keyof Hallazgo, valor: string) => void;
+  onChange: (id: string, campo: Exclude<keyof Hallazgo, 'sugerido'>, valor: string) => void;
   onDelete: () => void;
+  onValidar: () => void;
+  onRestaurar: () => void;
 }) {
   const item = itemPorId(hallazgo.itemId);
   const vence = vencido(hallazgo);
-  const set = (campo: keyof Hallazgo) => (valor: string) => onChange(hallazgo.id, campo, valor);
+  const set = (campo: Exclude<keyof Hallazgo, 'sugerido'>) => (valor: string) => onChange(hallazgo.id, campo, valor);
 
   return (
     <Card>
@@ -130,18 +145,31 @@ function HallazgoCard({
               {hallazgo.estado}
             </Pill>
             {vence ? <Pill className="p-no">Vencido</Pill> : null}
+            {hallazgo.sugerido ? <Pill className="p-al">Propuesta sin validar</Pill> : null}
           </div>
           <div style={{ marginTop: 7, fontWeight: 500 }}>{item?.item || ''}</div>
           <div className="meta" style={{ fontSize: 11.5, color: 'var(--tinta3)', marginTop: 4 }}>
             {hallazgo.servicio} · Ronda {hallazgo.rondaId} · {fmtF(hallazgo.fecha)}
           </div>
         </div>
-        <button type="button" className="btn danger sm" onClick={onDelete}>Eliminar</button>
+        <div className="row" style={{ flexDirection: 'column', gap: 5, alignItems: 'stretch' }}>
+          {hallazgo.sugerido ? (
+            <button type="button" className="btn sm" onClick={onValidar}>Validar plan</button>
+          ) : (
+            <button type="button" className="btn quiet sm" onClick={onRestaurar}>Volver a la propuesta</button>
+          )}
+          <button type="button" className="btn danger sm" onClick={onDelete}>Eliminar</button>
+        </div>
       </div>
+      {hallazgo.sugerido ? (
+        <div className="aviso" style={{ marginTop: 10 }}>
+          Texto generado por la herramienta. El campo <b>¿POR QUÉ?</b> trae hipótesis, no una causa: reemplácelo por la causa que confirmó en la ronda.
+        </div>
+      ) : null}
       <div className="grid g2" style={{ marginTop: 12 }}>
         <DebouncedField label="Hallazgo encontrado" value={hallazgo.desc} onCommit={set('desc')} multiline span />
         <DebouncedField label="¿Qué? Acción de mejora" value={hallazgo.que} onCommit={set('que')} multiline />
-        <DebouncedField label="¿Por qué? Causa que la justifica" value={hallazgo.porque} onCommit={set('porque')} multiline />
+        <DebouncedField label="¿Por qué? Causa confirmada en la ronda" value={hallazgo.porque} onCommit={set('porque')} multiline />
         <DebouncedField label="¿Dónde? Lugar de aplicación" value={hallazgo.donde} onCommit={set('donde')} />
         <DebouncedField label="¿Quién? Responsable" value={hallazgo.quien} onCommit={set('quien')} placeholder="Nombre y cargo" />
         <DebouncedField label="¿Cuándo? Fecha compromiso" value={hallazgo.cuando} onCommit={set('cuando')} type="date" />

@@ -97,6 +97,7 @@ export function exportCsvHallazgos(data: AppData): void {
     'Fecha de cierre',
     'Evidencia',
     'Semáforo',
+    'Origen del texto',
   ]];
   data.hallazgos.forEach((hallazgo: Hallazgo) => {
     const item = itemPorId(hallazgo.itemId);
@@ -119,6 +120,7 @@ export function exportCsvHallazgos(data: AppData): void {
       hallazgo.fechaCierre,
       hallazgo.evidencia,
       semaforoHallazgo(hallazgo),
+      hallazgo.sugerido ? 'Propuesta sin validar' : 'Validado por el auditor',
     ]);
   });
   downloadFile('planes_mejoramiento_5w1h.csv', toCsv(filas), 'text/csv;charset=utf-8');

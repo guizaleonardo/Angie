@@ -152,3 +152,7 @@ export function semaforoHallazgo(hallazgo: Hallazgo): string {
 export function planesAbiertos(hallazgos: Hallazgo[]): number {
   return hallazgos.filter((h) => h.estado !== 'Cerrado').length;
 }
+
+export function planesSinValidar(hallazgos: Hallazgo[]): number {
+  return hallazgos.filter((h) => h.sugerido && h.estado !== 'Cerrado').length;
+}

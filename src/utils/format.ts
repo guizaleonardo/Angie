@@ -32,3 +32,10 @@ export function nextPrefixedId(seq: number, prefix: string): { seq: number; id: 
   const next = (seq || 0) + 1;
   return { seq: next, id: `${prefix}-${String(next).padStart(3, '0')}` };
 }
+
+export function sumarDias(fecha: string | undefined, dias: number): string {
+  if (!fecha) return '';
+  const x = new Date(`${fecha}T00:00:00`);
+  x.setDate(x.getDate() + dias);
+  return x.toISOString().slice(0, 10);
+}

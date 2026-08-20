@@ -12,7 +12,7 @@ import { itemPorId, itemsDeServicio, NOMBRE_BLOQUE } from '../data/rondas';
 import { loadAppData, normalizeAppData, saveAppData, serializeBackup } from '../services/storage';
 import type { AppData, Hallazgo, ResultadoEstado, Ronda } from '../types';
 import { EMPTY_APP_DATA } from '../types';
-import { hoy, nextPrefixedId } from '../utils/format';
+import { hoy, nextPrefixedId, sumarDias } from '../utils/format';
 import { useToast } from './ToastContext';
 
 interface CrearRondaInput {
@@ -22,7 +22,7 @@ interface CrearRondaInput {
   acompanantes: string;
 }
 
-type HallazgoCampo = keyof Hallazgo;
+type HallazgoCampo = Exclude<keyof Hallazgo, 'sugerido'>;
 
 interface AppContextValue {
   data: AppData;
@@ -35,6 +35,8 @@ interface AppContextValue {
   limpiarResultados: (rondaId: string) => boolean;
   crearHallazgo: (rondaId: string, itemId: string) => Hallazgo | null;
   generarPendientes: () => number;
+  validarHallazgo: (id: string) => boolean;
+  restaurarPropuesta: (id: string) => boolean;
   setHallazgoCampo: (id: string, campo: HallazgoCampo, valor: string) => void;
   borrarHallazgo: (id: string) => boolean;
   tieneHallazgo: (rondaId: string, itemId: string) => boolean;
@@ -50,6 +52,7 @@ function nuevoHallazgo(seq: number, ronda: Ronda, itemId: string): { seq: number
   const item = itemPorId(itemId);
   if (!item) return null;
   const next = nextPrefixedId(seq, 'H');
+  const propuesta = item.prop;
   return {
     seq: next.seq,
     hallazgo: {
@@ -61,16 +64,17 @@ function nuevoHallazgo(seq: number, ronda: Ronda, itemId: string): { seq: number
       bloque: item.bloque,
       fecha: ronda.fecha,
       desc: ronda.resultados[itemId]?.obs || '',
-      criticidad: 'Media',
-      que: '',
-      porque: '',
+      criticidad: propuesta?.criticidad ?? 'Media',
+      que: propuesta?.que ?? '',
+      porque: propuesta?.porque ?? '',
       donde: ronda.servicio,
-      quien: '',
-      cuando: '',
-      como: '',
+      quien: propuesta?.quien ?? '',
+      cuando: propuesta ? sumarDias(ronda.fecha, propuesta.plazo) : '',
+      como: propuesta?.como ?? '',
       estado: 'Abierto',
       fechaCierre: '',
       evidencia: '',
+      sugerido: Boolean(propuesta),
     },
   };
 }
@@ -266,6 +270,59 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return creados;
   }, [commit]);
 
+  const validarHallazgo = useCallback(
+    (id: string) => {
+      const prev = dataRef.current;
+      const existe = prev.hallazgos.some((h) => h.id === id);
+      if (!existe) return false;
+      commit({
+        ...prev,
+        hallazgos: prev.hallazgos.map((hallazgo) =>
+          hallazgo.id === id ? { ...hallazgo, sugerido: false } : hallazgo,
+        ),
+      });
+      toast('Plan validado');
+      return true;
+    },
+    [commit, toast],
+  );
+
+  const restaurarPropuesta = useCallback(
+    (id: string) => {
+      const prev = dataRef.current;
+      const hallazgo = prev.hallazgos.find((h) => h.id === id);
+      if (!hallazgo) return false;
+      const item = itemPorId(hallazgo.itemId);
+      if (!item?.prop) {
+        toast('Este ítem no tiene propuesta en la biblioteca');
+        return false;
+      }
+      if (!window.confirm('Se reemplaza el texto actual del plan por la propuesta de la biblioteca. ¿Continuar?')) {
+        return false;
+      }
+      const propuesta = item.prop;
+      commit({
+        ...prev,
+        hallazgos: prev.hallazgos.map((h) =>
+          h.id === id
+            ? {
+                ...h,
+                criticidad: propuesta.criticidad,
+                que: propuesta.que,
+                porque: propuesta.porque,
+                quien: propuesta.quien,
+                como: propuesta.como,
+                cuando: sumarDias(h.fecha, propuesta.plazo),
+                sugerido: true,
+              }
+            : h,
+        ),
+      });
+      return true;
+    },
+    [commit, toast],
+  );
+
   const setHallazgoCampo = useCallback(
     (id: string, campo: HallazgoCampo, valor: string) => {
       const prev = dataRef.current;
@@ -338,6 +395,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       limpiarResultados,
       crearHallazgo,
       generarPendientes,
+      validarHallazgo,
+      restaurarPropuesta,
       setHallazgoCampo,
       borrarHallazgo,
       tieneHallazgo,
@@ -357,6 +416,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       limpiarResultados,
       crearHallazgo,
       generarPendientes,
+      validarHallazgo,
+      restaurarPropuesta,
       setHallazgoCampo,
       borrarHallazgo,
       tieneHallazgo,

@@ -10,6 +10,15 @@ export interface Bloque {
   tipo: TipoBloque;
 }
 
+export interface PropuestaPlan {
+  criticidad: Criticidad;
+  plazo: number;
+  quien: string;
+  que: string;
+  porque: string;
+  como: string;
+}
+
 export interface Item {
   id: string;
   bloque: string;
@@ -19,6 +28,7 @@ export interface Item {
   referencia: string;
   fuente: string;
   nota: string;
+  prop?: PropuestaPlan;
 }
 
 export interface ItemResultado {
@@ -56,6 +66,7 @@ export interface Hallazgo {
   estado: EstadoHallazgo;
   fechaCierre: string;
   evidencia: string;
+  sugerido: boolean;
 }
 
 export interface AppData {
