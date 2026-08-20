@@ -112,6 +112,16 @@ export interface PuntoTendencia {
   n: number;
 }
 
+export interface FirmaActa {
+  nombre: string;
+  imagen: string;
+}
+
+export interface FirmasActa {
+  seguridad: FirmaActa;
+  coordinador: FirmaActa;
+}
+
 export const EMPTY_APP_DATA: AppData = {
   rondas: [],
   hallazgos: [],

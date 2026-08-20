@@ -1,11 +1,11 @@
 import { LOGO_SRC } from '../components/BrandLogo/BrandLogo';
 import { itemsDeServicio } from '../data/rondas';
-import type { Hallazgo, Ronda } from '../types';
+import type { FirmasActa, Hallazgo, Ronda } from '../types';
 import { conteo, nivel } from '../utils/calculations';
 import { esc, fmtF, pct } from '../utils/format';
 import { filasBloqueActa } from './export';
 
-export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[]): boolean {
+export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[], firmas: FirmasActa): boolean {
   const c = conteo(ronda);
   const nv = nivel(c.pct);
   const hs = hallazgos.filter((h) => h.rondaId === ronda.id);
@@ -29,7 +29,10 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[]): boolean {
   .kv{display:grid;grid-template-columns:170px 1fr;gap:3px 10px;font-size:12.5px}
   .kv b{color:#4A5A6A;font-weight:600}
   .firma{margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:44px}
-  .firma div{border-top:1px solid #102033;padding-top:5px;font-size:11.5px;text-align:center}
+  .firma .caja{text-align:center}
+  .firma img{height:72px;width:auto;max-width:100%;object-fit:contain;display:block;margin:0 auto 8px}
+  .firma .nombre{font-weight:600;font-size:12.5px;margin-bottom:6px}
+  .firma .rol{border-top:1px solid #102033;padding-top:5px;font-size:11.5px}
   .acta-cab{display:flex;align-items:center;gap:16px;margin-bottom:18px}
   .acta-cab img{height:58px;width:auto;max-width:240px;object-fit:contain}
   @media print{body{margin:0}}</style>
@@ -68,7 +71,18 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[]): boolean {
       <tr><th>¿Cómo?</th><td>${esc(x.como) || '—'}</td></tr>
     </tbody></table>`).join('') : '<p>Sin planes registrados para esta ronda.</p>'}
   <h2>Observación general</h2><p>${esc(ronda.obs) || '—'}</p>
-  <div class="firma"><div>Líder de seguridad del paciente</div><div>Líder o coordinador del servicio</div></div>
+  <div class="firma">
+    <div class="caja">
+      <img src="${firmas.seguridad.imagen}" alt="Firma del líder de seguridad del paciente">
+      <div class="nombre">${esc(firmas.seguridad.nombre)}</div>
+      <div class="rol">Líder de seguridad del paciente</div>
+    </div>
+    <div class="caja">
+      <img src="${firmas.coordinador.imagen}" alt="Firma del líder o coordinador del servicio">
+      <div class="nombre">${esc(firmas.coordinador.nombre)}</div>
+      <div class="rol">Líder o coordinador del servicio</div>
+    </div>
+  </div>
   <script>window.onload=function(){window.print()}<\/script>`);
   popup.document.close();
   return true;

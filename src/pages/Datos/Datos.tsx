@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Card } from '../../components/Card/Card';
+import { GenerarActaButton } from '../../components/GenerarActaButton/GenerarActaButton';
 import { useApp } from '../../context/AppContext';
 import { useToast } from '../../context/ToastContext';
-import { abrirActa } from '../../services/acta';
 import { exportCsvDetalle, exportCsvHallazgos, exportCsvRondas } from '../../services/export';
 import { downloadFile } from '../../utils/csv';
 import { fmtF, hoy } from '../../utils/format';
@@ -43,14 +43,6 @@ export function Datos() {
       }
     };
     reader.readAsText(file);
-  };
-
-  const onActa = () => {
-    const ronda = data.rondas.find((r) => r.id === actaId) || data.rondas[0];
-    if (!ronda) return;
-    if (!abrirActa(ronda, data.hallazgos)) {
-      toast('El navegador bloqueó la ventana. Permita las ventanas emergentes.');
-    }
   };
 
   return (
@@ -115,9 +107,14 @@ export function Datos() {
                 ))
               : <option>Sin rondas</option>}
           </select>
-          <button type="button" className="btn" disabled={!data.rondas.length} onClick={onActa}>
+          <GenerarActaButton
+            ronda={data.rondas.find((ronda) => ronda.id === actaId) || data.rondas[0]}
+            hallazgos={data.hallazgos}
+            className="btn"
+            disabled={!data.rondas.length}
+          >
             Generar acta
-          </button>
+          </GenerarActaButton>
         </div>
       </div>
 

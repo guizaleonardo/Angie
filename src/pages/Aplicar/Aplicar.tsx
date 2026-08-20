@@ -3,19 +3,17 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Bloque } from '../../components/Bloque/Bloque';
 import { Card } from '../../components/Card/Card';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
+import { GenerarActaButton } from '../../components/GenerarActaButton/GenerarActaButton';
 import { ObservationInput } from '../../components/ObservationInput/ObservationInput';
 import { Pill } from '../../components/Pill/Pill';
 import { useApp } from '../../context/AppContext';
-import { useToast } from '../../context/ToastContext';
 import { BLOQUES, itemsDeServicio } from '../../data/rondas';
-import { abrirActa } from '../../services/acta';
 import { conteo, nivel } from '../../utils/calculations';
 import { fmtF, pct } from '../../utils/format';
 
 export function Aplicar() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const {
     data,
     marcar,
@@ -57,12 +55,6 @@ export function Aplicar() {
   const onCrearPlan = (itemId: string) => {
     crearHallazgo(ronda.id, itemId);
     navigate('/hallazgos');
-  };
-
-  const onActa = () => {
-    if (!abrirActa(ronda, data.hallazgos)) {
-      toast('El navegador bloqueó la ventana. Permita las ventanas emergentes.');
-    }
   };
 
   return (
@@ -125,9 +117,9 @@ export function Aplicar() {
           <button type="button" className="btn ghost" onClick={() => navigate('/hallazgos')}>
             Ir a los planes de mejoramiento
           </button>
-          <button type="button" className="btn quiet" onClick={onActa}>
+          <GenerarActaButton ronda={ronda} hallazgos={data.hallazgos} className="btn quiet">
             Generar acta para imprimir
-          </button>
+          </GenerarActaButton>
         </div>
       </Card>
     </>
