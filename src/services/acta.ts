@@ -19,16 +19,16 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[]): boolean {
   if (!popup) return false;
 
   popup.document.write(`<!doctype html><meta charset="utf-8"><title>Acta ronda ${esc(ronda.id)}</title>
-  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#11201C;max-width:820px;margin:34px auto;padding:0 22px;font-size:13px;line-height:1.5}
-  h1{font-size:17px;margin:0 0 2px}h2{font-size:13px;margin:22px 0 7px;border-bottom:2px solid #0E5C4A;padding-bottom:4px;color:#0E5C4A;text-transform:uppercase;letter-spacing:.05em}
+  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#102033;max-width:820px;margin:34px auto;padding:0 22px;font-size:13px;line-height:1.5}
+  h1{font-size:17px;margin:0 0 2px}h2{font-size:13px;margin:22px 0 7px;border-bottom:2px solid #0E4A7A;padding-bottom:4px;color:#0E4A7A;text-transform:uppercase;letter-spacing:.05em}
   .sub{color:#666;font-size:11.5px;margin-bottom:16px}
   table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
-  th{background:#E4EFEA;text-align:left;padding:6px 7px;border:1px solid #C3CCC7;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-  td{padding:6px 7px;border:1px solid #DCE1DD;vertical-align:top}
+  th{background:#E4EEF6;text-align:left;padding:6px 7px;border:1px solid #C3CDD6;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  td{padding:6px 7px;border:1px solid #DCE3EA;vertical-align:top}
   .kv{display:grid;grid-template-columns:170px 1fr;gap:3px 10px;font-size:12.5px}
-  .kv b{color:#4A5A55;font-weight:600}
+  .kv b{color:#4A5A6A;font-weight:600}
   .firma{margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:44px}
-  .firma div{border-top:1px solid #11201C;padding-top:5px;font-size:11.5px;text-align:center}
+  .firma div{border-top:1px solid #102033;padding-top:5px;font-size:11.5px;text-align:center}
   @media print{body{margin:0}}</style>
   <h1>Acta de ronda de seguridad del paciente</h1>
   <div class="sub">Guía Técnica de Buenas Prácticas para la Seguridad del Paciente (MinSalud) · Resolución 3100 de 2019</div>

@@ -27,24 +27,24 @@ export function TrendChart({ points }: TrendChartProps) {
             x2={W - pd}
             y1={y(g)}
             y2={y(g)}
-            stroke={g === 0.9 ? '#B7D3C7' : '#E7EBE8'}
+            stroke={g === 0.9 ? '#B7C9DC' : '#E7EBEF'}
             strokeDasharray={g === 0.9 ? '4 3' : '0'}
           />
-          <text x="4" y={y(g) + 4} fontSize="10" fill="#7C8A85" fontFamily="IBM Plex Mono,monospace">
+          <text x="4" y={y(g) + 4} fontSize="10" fill="#7A8896" fontFamily="IBM Plex Mono,monospace">
             {(g * 100).toFixed(0)}%
           </text>
         </g>
       ))}
-      <polyline points={linea} fill="none" stroke="#0E5C4A" strokeWidth="2.5" strokeLinejoin="round" />
+      <polyline points={linea} fill="none" stroke="#0E4A7A" strokeWidth="2.5" strokeLinejoin="round" />
       {points.map((p, i) => (
         <g key={p.k}>
-          <circle cx={x(i)} cy={y(p.v)} r="4.5" fill="#fff" stroke="#0E5C4A" strokeWidth="2.5" />
+          <circle cx={x(i)} cy={y(p.v)} r="4.5" fill="#fff" stroke="#0E4A7A" strokeWidth="2.5" />
           <text
             x={x(i)}
             y={H - 8}
             textAnchor="middle"
             fontSize="10"
-            fill="#4A5A55"
+            fill="#4A5A6A"
             fontFamily="IBM Plex Mono,monospace"
           >
             {p.k}
@@ -55,7 +55,7 @@ export function TrendChart({ points }: TrendChartProps) {
             textAnchor="middle"
             fontSize="10.5"
             fontWeight="600"
-            fill="#0E5C4A"
+            fill="#0E4A7A"
             fontFamily="IBM Plex Mono,monospace"
           >
             {(p.v * 100).toFixed(0)}%

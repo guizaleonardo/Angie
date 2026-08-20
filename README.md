@@ -77,4 +77,4 @@ src/
 - Vite
 - TypeScript
 - React Router
-- CSS global (identidad visual del HTML original: IBM Plex y paleta verde)
+- CSS global (IBM Plex y paleta azul)

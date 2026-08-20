@@ -1,16 +1,18 @@
 :root {
-  --papel: #F5F6F3;
+  --papel: #F4F6F9;
   --sup: #FFFFFF;
-  --tinta: #11201C;
-  --tinta2: #4A5A55;
-  --tinta3: #7C8A85;
-  --linea: #DCE1DD;
-  --linea2: #C3CCC7;
-  --marca: #0E5C4A;
-  --marca-suave: #E4EFEA;
-  --marca-borde: #B7D3C7;
-  --si: #1F7A4C;
-  --si-bg: #E6F3EA;
+  --tinta: #102033;
+  --tinta2: #4A5A6A;
+  --tinta3: #7A8896;
+  --linea: #DCE3EA;
+  --linea2: #C3CDD6;
+  --marca: #0E4A7A;
+  --marca-hover: #0A3A62;
+  --marca-suave: #E4EEF6;
+  --marca-borde: #B7C9DC;
+  --nav-muted: #B9D4E8;
+  --si: #1A6B9E;
+  --si-bg: #E6F1F8;
   --no: #B3261E;
   --no-bg: #FBE9E7;
   --na: #6B7280;
@@ -102,7 +104,7 @@ label {
 
 .top .sub {
   font-size: 12px;
-  color: #B9D8CC;
+  color: var(--nav-muted);
 }
 
 .nav {
@@ -116,7 +118,7 @@ label {
 .nav button {
   background: transparent;
   border: 0;
-  color: #B9D8CC;
+  color: var(--nav-muted);
   padding: 9px 14px;
   border-radius: 6px 6px 0 0;
   font-weight: 500;
@@ -175,7 +177,7 @@ label {
   font-weight: 600;
 }
 
-.btn:hover { background: #0A4A3B; }
+.btn:hover { background: var(--marca-hover); }
 
 .btn.ghost {
   background: transparent;
@@ -297,7 +299,7 @@ td {
   vertical-align: top;
 }
 
-tr:hover td { background: #FAFBFA; }
+tr:hover td { background: #F7F9FC; }
 .tbl-scroll { overflow-x: auto; }
 
 .bar {
