@@ -17,3 +17,13 @@ dist-ssr
 .idea
 .DS_Store
 Thumbs.db
+
+# Android
+android/.gradle/
+android/.idea/
+android/local.properties
+android/**/build/
+android/**/*.iml
+android/.kotlin/
+android/captures/
+android/app/release/
