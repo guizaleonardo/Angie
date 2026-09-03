@@ -113,6 +113,38 @@ label {
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
+}
+
+.app-switch {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, .12);
+  border-radius: 8px;
+  padding: 3px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.app-switch button {
+  background: transparent;
+  border: 0;
+  color: var(--nav-muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.app-switch button:hover:not(.on) {
+  color: #fff;
+  background: rgba(255, 255, 255, .1);
+}
+
+.app-switch button.on {
+  background: #fff;
+  color: var(--marca);
 }
 
 .top h1 {
@@ -427,6 +459,57 @@ tr:hover td { background: #F7F9FC; }
   margin-bottom: 12px;
 }
 
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.chip {
+  border: 1px solid var(--linea2);
+  background: var(--sup);
+  border-radius: 20px;
+  padding: 6px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tinta2);
+}
+
+.chip.on {
+  background: var(--marca);
+  border-color: var(--marca);
+  color: #fff;
+  font-weight: 600;
+}
+
+.mtx td, .mtx th {
+  text-align: center;
+  padding: 6px 4px;
+  font-size: 12px;
+}
+
+.mtx td:first-child, .mtx th:first-child {
+  text-align: left;
+  min-width: 150px;
+}
+
+.tick {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--linea2);
+  background: var(--sup);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--tinta3);
+  padding: 0;
+}
+
+.tick.si { background: var(--si); border-color: var(--si); color: #fff; }
+.tick.no { background: var(--no); border-color: var(--no); color: #fff; }
+.tick.na { background: var(--na); border-color: var(--na); color: #fff; }
+
 .hide { display: none !important; }
 
 .modal-back {
@@ -488,10 +571,12 @@ tr:hover td { background: #F7F9FC; }
   .it .cab { flex-wrap: wrap; }
   .sel { width: 100%; margin-top: 6px; }
   .sel button { flex: 1; }
+  .app-switch { width: 100%; }
+  .app-switch button { flex: 1; }
 }
 
 @media print {
-  .nav, .top, .noimp { display: none !important; }
+  .nav, .top, .app-switch, .noimp { display: none !important; }
   #rsp { background: #fff; }
   .card { border: 0; padding: 0; break-inside: avoid; }
 }
