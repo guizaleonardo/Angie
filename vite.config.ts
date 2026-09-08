@@ -8,7 +8,7 @@ export default defineConfig({
       ignored: ['**/android/**', '**/backend/**'],
     },
     proxy: {
-      '/api': 'http://localhost:4000',
+      '/api': 'https://angie-t42s.onrender.com',
     },
   },
 });
