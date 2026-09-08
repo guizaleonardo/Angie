@@ -4,11 +4,25 @@ import { SignaturePad } from '../SignaturePad/SignaturePad';
 
 interface FirmaActaModalProps {
   liderSugerido?: string;
+  titulo?: string;
+  hint?: string;
+  labelSeguridad?: string;
+  labelCoordinador?: string;
+  confirmLabel?: string;
   onCancel: () => void;
   onConfirm: (firmas: FirmasActa) => void;
 }
 
-export function FirmaActaModal({ liderSugerido = '', onCancel, onConfirm }: FirmaActaModalProps) {
+export function FirmaActaModal({
+  liderSugerido = '',
+  titulo = 'Firmas del acta',
+  hint = 'Antes de generar el documento deben firmar el líder de seguridad del paciente y el líder o coordinador del servicio.',
+  labelSeguridad = 'Líder de seguridad del paciente',
+  labelCoordinador = 'Líder o coordinador del servicio',
+  confirmLabel = 'Generar acta',
+  onCancel,
+  onConfirm,
+}: FirmaActaModalProps) {
   const [seguridadNombre, setSeguridadNombre] = useState(liderSugerido);
   const [coordinadorNombre, setCoordinadorNombre] = useState('');
   const [seguridadImagen, setSeguridadImagen] = useState('');
@@ -23,13 +37,11 @@ export function FirmaActaModal({ liderSugerido = '', onCancel, onConfirm }: Firm
   return (
     <div className="modal-back noimp" role="dialog" aria-modal="true" aria-labelledby="firmas-titulo">
       <div className="modal">
-        <h2 id="firmas-titulo">Firmas del acta</h2>
-        <div className="hint">
-          Antes de generar el documento deben firmar el líder de seguridad del paciente y el líder o coordinador del servicio.
-        </div>
+        <h2 id="firmas-titulo">{titulo}</h2>
+        <div className="hint">{hint}</div>
         <div className="grid g2" style={{ marginTop: 12 }}>
           <div>
-            <label htmlFor="firma-seguridad-nombre">Líder de seguridad del paciente</label>
+            <label htmlFor="firma-seguridad-nombre">{labelSeguridad}</label>
             <input
               id="firma-seguridad-nombre"
               value={seguridadNombre}
@@ -40,7 +52,7 @@ export function FirmaActaModal({ liderSugerido = '', onCancel, onConfirm }: Firm
             <SignaturePad value={seguridadImagen} onChange={setSeguridadImagen} />
           </div>
           <div>
-            <label htmlFor="firma-coord-nombre">Líder o coordinador del servicio</label>
+            <label htmlFor="firma-coord-nombre">{labelCoordinador}</label>
             <input
               id="firma-coord-nombre"
               value={coordinadorNombre}
@@ -69,7 +81,7 @@ export function FirmaActaModal({ liderSugerido = '', onCancel, onConfirm }: Firm
               })
             }
           >
-            Generar acta
+            {confirmLabel}
           </button>
         </div>
       </div>

@@ -1,0 +1,26 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - anga_mongo:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: anga
+
+  api:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/anga
+      CORS_ORIGIN: "http://localhost:5173,http://127.0.0.1:5173"
+      NODE_ENV: production
+    depends_on:
+      - mongo
+
+volumes:
+  anga_mongo:

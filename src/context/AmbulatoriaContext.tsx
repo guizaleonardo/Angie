@@ -8,8 +8,9 @@ import {
   useRef,
   useState,
 } from 'react';
-import { AMB_BLOQUES_SERVICIO, AMB_NOMBRE_BLOQUE, itemAmbPorId, itemsDeArea, itemsTransversales } from '../data/ambulatoria';
-import { loadVisita, normalizeVisita, saveVisita, visitaNueva } from '../services/ambulatoriaStorage';
+import { loadVisita, normalizeVisita, saveVisita } from '../services/ambulatoriaStorage';
+import { api } from '../services/api';
+import { useAuth } from './AuthContext';
 import type { ItemResultado, ResultadoEstado } from '../types';
 import type {
   AccionHigiene,
@@ -21,13 +22,29 @@ import type {
 } from '../types/ambulatoria';
 import { nextTick, resDe, slotsVacios } from '../utils/ambulatoria';
 import { nextPrefixedId, sumarDias } from '../utils/format';
+import { AMBULATORIA_CONFIG, type VisitaConfig } from '../visita/config';
 import { useToast } from './ToastContext';
 
-interface AmbulatoriaContextValue {
+export interface VisitaResumen {
+  id: string;
+  sede: string;
+  fecha: string;
+  auditor: string;
+  hallazgos: number;
+  NC?: number;
+  pct?: number | null;
+}
+
+export interface AmbulatoriaContextValue {
+  config: VisitaConfig;
   visita: VisitaAmb;
+  historial: VisitaResumen[];
   setCampo: (campo: VisitaCampo, valor: string) => void;
   toggleArea: (codigo: string) => boolean;
-  reiniciar: () => boolean;
+  toggleBloque: (codigo: string) => boolean;
+  setBloques: (codigos: string[]) => void;
+  nuevaVisita: () => Promise<boolean>;
+  abrirVisita: (id: string) => Promise<boolean>;
   marcar: (scope: string, itemId: string, estado: ResultadoEstado) => void;
   setObs: (scope: string, itemId: string, obs: string) => void;
   crearPlan: (scope: string, itemId: string) => HallazgoAmb | null;
@@ -67,12 +84,17 @@ function setResultado(visita: VisitaAmb, scope: string, itemId: string, patch: P
   return { ...visita, areasRes: { ...visita.areasRes, [scope]: areaMap } };
 }
 
-function nuevoHallazgo(visita: VisitaAmb, scope: string, itemId: string): { visita: VisitaAmb; hallazgo: HallazgoAmb } | null {
-  const item = itemAmbPorId(itemId);
+function nuevoHallazgo(
+  visita: VisitaAmb,
+  scope: string,
+  itemId: string,
+  config: VisitaConfig,
+): { visita: VisitaAmb; hallazgo: HallazgoAmb } | null {
+  const item = config.itemPorId(itemId);
   if (!item) return null;
   const { seq, id } = nextPrefixedId(visita.seq, 'H');
   const propuesta = item.prop;
-  const area = scope === 'T' ? 'Toda la sede' : AMB_NOMBRE_BLOQUE[scope] || scope;
+  const area = scope === 'T' ? 'Toda la sede' : config.nombreBloque[scope] || scope;
   const hallazgo: HallazgoAmb = {
     id,
     scope,
@@ -95,25 +117,77 @@ function nuevoHallazgo(visita: VisitaAmb, scope: string, itemId: string): { visi
   return { visita: { ...visita, seq, hallazgos: [...visita.hallazgos, hallazgo] }, hallazgo };
 }
 
-export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
+export function VisitaProvider({ config, children }: { config: VisitaConfig; children: ReactNode }) {
   const { toast } = useToast();
-  const [visita, setVisita] = useState<VisitaAmb>(() => loadVisita());
+  const { selectedUserId, user } = useAuth();
+  const [visita, setVisita] = useState<VisitaAmb>(() => loadVisita(config.storageKey, config.createVisita));
+  const [historial, setHistorial] = useState<VisitaResumen[]>([]);
   const visitaRef = useRef(visita);
   visitaRef.current = visita;
+  const configRef = useRef(config);
+  configRef.current = config;
+  const skipSave = useRef(true);
 
   const commit = useCallback((next: VisitaAmb) => {
     visitaRef.current = next;
     setVisita(next);
   }, []);
 
+  const cargarHistorial = useCallback(async () => {
+    if (!selectedUserId) return;
+    const list = await api<VisitaResumen[]>(
+      `/visitas?modalidad=${config.id}&userId=${encodeURIComponent(selectedUserId)}`,
+    );
+    setHistorial(list);
+  }, [config.id, selectedUserId]);
+
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      if (!saveVisita(visita)) {
-        toast('No se pudo guardar. Descargue el respaldo antes de cerrar.');
+    if (!user || !selectedUserId) return;
+    let cancelled = false;
+    skipSave.current = true;
+    (async () => {
+      try {
+        const data = await api<VisitaAmb>(
+          `/visitas/activa?modalidad=${config.id}&userId=${encodeURIComponent(selectedUserId)}`,
+        );
+        if (cancelled) return;
+        commit(normalizeVisita(data, config.createVisita) ?? config.createVisita());
+        const list = await api<VisitaResumen[]>(
+          `/visitas?modalidad=${config.id}&userId=${encodeURIComponent(selectedUserId)}`,
+        );
+        if (!cancelled) setHistorial(list);
+      } catch {
+        if (!cancelled) toast('No se pudo cargar la información de este usuario');
+      } finally {
+        window.setTimeout(() => {
+          if (!cancelled) skipSave.current = false;
+        }, 50);
       }
-    }, 350);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [config, selectedUserId, user, commit, toast]);
+
+  useEffect(() => {
+    if (skipSave.current || !visita.id) return;
+    const timer = window.setTimeout(() => {
+      saveVisita(visita, config.storageKey);
+      api(`/visitas/${visita.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...visita, modalidad: config.id, userId: selectedUserId }),
+      }).catch(() => {
+        toast('No se pudo guardar en el servidor. Descargue el respaldo antes de cerrar.');
+      });
+    }, 400);
     return () => window.clearTimeout(timer);
-  }, [visita, toast]);
+  }, [visita, config.id, config.storageKey, selectedUserId, toast]);
+
+  useEffect(() => {
+    return () => {
+      saveVisita(visitaRef.current, config.storageKey);
+    };
+  }, [config.storageKey]);
 
   const setCampo = useCallback(
     (campo: VisitaCampo, valor: string) => {
@@ -125,15 +199,16 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
   const toggleArea = useCallback(
     (codigo: string) => {
       const prev = visitaRef.current;
+      const nombre = configRef.current.nombreBloque[codigo] || codigo;
       if (prev.areas.includes(codigo)) {
         const tieneDatos = prev.areasRes[codigo] && Object.keys(prev.areasRes[codigo]).length;
-        if (tieneDatos && !window.confirm(`El área ${AMB_NOMBRE_BLOQUE[codigo] || codigo} ya tiene resultados. ¿Quitarla de la visita?`)) {
+        if (tieneDatos && !window.confirm(`El área ${nombre} ya tiene resultados. ¿Quitarla de la visita?`)) {
           return false;
         }
         commit({ ...prev, areas: prev.areas.filter((x) => x !== codigo) });
         return true;
       }
-      const order = AMB_BLOQUES_SERVICIO.map((b) => b.codigo);
+      const order = configRef.current.ordenAreas;
       const areas = [...prev.areas, codigo].sort((a, b) => order.indexOf(a) - order.indexOf(b));
       commit({ ...prev, areas });
       return true;
@@ -141,11 +216,109 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
     [commit],
   );
 
-  const reiniciar = useCallback(() => {
-    if (!window.confirm('Se descarta la visita actual y sus resultados. ¿Descargó el respaldo?')) return false;
-    commit(visitaNueva());
-    return true;
-  }, [commit]);
+  const toggleBloque = useCallback(
+    (codigo: string) => {
+      const prev = visitaRef.current;
+      const cfg = configRef.current;
+      const nombre = cfg.nombreBloque[codigo] || codigo;
+      const actuales = prev.bloques.length ? prev.bloques : [...cfg.ordenBloques];
+      if (actuales.includes(codigo)) {
+        const conDatos = cfg
+          .itemsTransversales({ ...prev, bloques: [codigo] })
+          .some((i) => resDe(prev, 'T', i.id).r);
+        if (conDatos && !window.confirm(`El bloque ${nombre} ya tiene resultados. ¿Quitarlo de la ronda?`)) {
+          return false;
+        }
+        commit({ ...prev, bloques: actuales.filter((x) => x !== codigo) });
+        return true;
+      }
+      const bloques = [...actuales, codigo].sort(
+        (a, b) => cfg.ordenBloques.indexOf(a) - cfg.ordenBloques.indexOf(b),
+      );
+      commit({ ...prev, bloques });
+      return true;
+    },
+    [commit],
+  );
+
+  const setBloques = useCallback(
+    (codigos: string[]) => {
+      const order = configRef.current.ordenBloques;
+      commit({
+        ...visitaRef.current,
+        bloques: [...codigos].sort((a, b) => order.indexOf(a) - order.indexOf(b)),
+      });
+    },
+    [commit],
+  );
+
+  const persistir = useCallback(
+    async (current: VisitaAmb) => {
+      saveVisita(current, configRef.current.storageKey);
+      if (!current.id) return;
+      await api(`/visitas/${current.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...current, modalidad: configRef.current.id, userId: selectedUserId }),
+      });
+    },
+    [selectedUserId],
+  );
+
+  const nuevaVisita = useCallback(async () => {
+    if (
+      !window.confirm(
+        'Se abre una visita nueva en blanco. La visita actual queda guardada en el historial. ¿Continuar?',
+      )
+    ) {
+      return false;
+    }
+    skipSave.current = true;
+    try {
+      await persistir(visitaRef.current);
+      const prev = visitaRef.current;
+      const created = await api<VisitaAmb>('/visitas', {
+        method: 'POST',
+        body: JSON.stringify({
+          modalidad: configRef.current.id,
+          userId: selectedUserId,
+          sede: prev.sede,
+          municipio: prev.municipio,
+        }),
+      });
+      commit(normalizeVisita(created, configRef.current.createVisita) ?? created);
+      await cargarHistorial();
+      toast('Visita nueva. La anterior quedó en el historial.');
+      return true;
+    } catch {
+      toast('No se pudo crear la nueva visita');
+      return false;
+    } finally {
+      window.setTimeout(() => {
+        skipSave.current = false;
+      }, 50);
+    }
+  }, [cargarHistorial, commit, persistir, selectedUserId, toast]);
+
+  const abrirVisita = useCallback(
+    async (id: string) => {
+      if (id === visitaRef.current.id) return true;
+      skipSave.current = true;
+      try {
+        await persistir(visitaRef.current);
+        const data = await api<VisitaAmb>(`/visitas/${id}`);
+        commit(normalizeVisita(data, configRef.current.createVisita) ?? data);
+        return true;
+      } catch {
+        toast('No se pudo abrir esa visita');
+        return false;
+      } finally {
+        window.setTimeout(() => {
+          skipSave.current = false;
+        }, 50);
+      }
+    },
+    [commit, persistir, toast],
+  );
 
   const marcar = useCallback(
     (scope: string, itemId: string, estado: ResultadoEstado) => {
@@ -165,7 +338,7 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
 
   const crearPlan = useCallback(
     (scope: string, itemId: string) => {
-      const created = nuevoHallazgo(visitaRef.current, scope, itemId);
+      const created = nuevoHallazgo(visitaRef.current, scope, itemId, configRef.current);
       if (!created) return null;
       commit(created.visita);
       return created.hallazgo;
@@ -175,23 +348,24 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
 
   const generarPendientes = useCallback(() => {
     let current = visitaRef.current;
+    const cfg = configRef.current;
     let n = 0;
     const falta = (scope: string, itemId: string) =>
       resDe(current, scope, itemId).r === 'NC' &&
       !current.hallazgos.some((h) => h.itemId === itemId && h.scope === scope);
 
-    itemsTransversales().forEach((item) => {
+    cfg.itemsTransversales(current).forEach((item) => {
       if (!falta('T', item.id)) return;
-      const created = nuevoHallazgo(current, 'T', item.id);
+      const created = nuevoHallazgo(current, 'T', item.id, cfg);
       if (created) {
         current = created.visita;
         n += 1;
       }
     });
     current.areas.forEach((area) => {
-      itemsDeArea(area).forEach((item) => {
+      cfg.itemsDeArea(area).forEach((item) => {
         if (!falta(area, item.id)) return;
-        const created = nuevoHallazgo(current, area, item.id);
+        const created = nuevoHallazgo(current, area, item.id, cfg);
         if (created) {
           current = created.visita;
           n += 1;
@@ -216,8 +390,7 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
   const validarHallazgo = useCallback(
     (id: string) => {
       const prev = visitaRef.current;
-      const hallazgo = prev.hallazgos.find((h) => h.id === id);
-      if (!hallazgo) return false;
+      if (!prev.hallazgos.some((h) => h.id === id)) return false;
       commit({
         ...prev,
         hallazgos: prev.hallazgos.map((h) => (h.id === id ? { ...h, sugerido: false } : h)),
@@ -320,7 +493,7 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
 
   const replaceVisita = useCallback(
     (next: VisitaAmb) => {
-      const normalized = normalizeVisita(next);
+      const normalized = normalizeVisita(next, configRef.current.createVisita);
       if (!normalized) return false;
       commit(normalized);
       return true;
@@ -330,10 +503,15 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      config,
       visita,
+      historial,
       setCampo,
       toggleArea,
-      reiniciar,
+      toggleBloque,
+      setBloques,
+      nuevaVisita,
+      abrirVisita,
       marcar,
       setObs,
       crearPlan,
@@ -351,10 +529,15 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
       replaceVisita,
     }),
     [
+      config,
       visita,
+      historial,
       setCampo,
       toggleArea,
-      reiniciar,
+      toggleBloque,
+      setBloques,
+      nuevaVisita,
+      abrirVisita,
       marcar,
       setObs,
       crearPlan,
@@ -376,8 +559,14 @@ export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
   return <AmbulatoriaContext.Provider value={value}>{children}</AmbulatoriaContext.Provider>;
 }
 
+export function AmbulatoriaProvider({ children }: { children: ReactNode }) {
+  return <VisitaProvider config={AMBULATORIA_CONFIG}>{children}</VisitaProvider>;
+}
+
 export function useAmbulatoria(): AmbulatoriaContextValue {
   const ctx = useContext(AmbulatoriaContext);
-  if (!ctx) throw new Error('useAmbulatoria debe usarse dentro de AmbulatoriaProvider');
+  if (!ctx) throw new Error('useAmbulatoria debe usarse dentro de VisitaProvider');
   return ctx;
 }
+
+export const useVisita = useAmbulatoria;

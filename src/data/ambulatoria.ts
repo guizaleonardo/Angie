@@ -2943,8 +2943,9 @@ export const ACCIONES: Array<[string, string]> = [
 
 export const AREAS_DEFAULT = ['CE', 'OD', 'LC', 'ES'];
 
-export function itemsTransversales(): Item[] {
-  return AMB_ITEMS.filter((i) => AMB_CODIGOS_TRANSVERSALES.has(i.bloque));
+export function itemsTransversales(activos?: string[]): Item[] {
+  const allowed = activos?.length ? new Set(activos) : AMB_CODIGOS_TRANSVERSALES;
+  return AMB_ITEMS.filter((i) => AMB_CODIGOS_TRANSVERSALES.has(i.bloque) && allowed.has(i.bloque));
 }
 
 export function itemsDeArea(codigo: string): Item[] {

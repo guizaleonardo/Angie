@@ -4,14 +4,14 @@ import { AmbBloque } from '../../components/AmbBloque/AmbBloque';
 import { Card } from '../../components/Card/Card';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { Pill } from '../../components/Pill/Pill';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
-import { AMB_NOMBRE_BLOQUE, itemsDeArea } from '../../data/ambulatoria';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import { cuentaArea } from '../../utils/ambulatoria';
 import { nivel } from '../../utils/calculations';
 import { pct } from '../../utils/format';
+import { pathOf } from '../../visita/config';
 
 export function AmbAreas() {
-  const { visita } = useAmbulatoria();
+  const { visita, config } = useVisita();
   const navigate = useNavigate();
   const [areaAct, setAreaAct] = useState<string>(visita.areas[0] || '');
 
@@ -29,7 +29,7 @@ export function AmbAreas() {
         <EmptyState title="No hay áreas seleccionadas">
           Marque en la pestaña Visita las áreas que existen en la sede.
           <div style={{ marginTop: 14 }}>
-            <button type="button" className="btn" onClick={() => navigate('/ambulatoria')}>
+            <button type="button" className="btn" onClick={() => navigate(pathOf(config))}>
               Seleccionar áreas
             </button>
           </div>
@@ -38,8 +38,8 @@ export function AmbAreas() {
     );
   }
 
-  const items = itemsDeArea(areaAct);
-  const k = cuentaArea(visita, areaAct);
+  const items = config.itemsDeArea(areaAct);
+  const k = cuentaArea(visita, areaAct, config);
   const n = nivel(k.pct);
 
   return (
@@ -47,7 +47,7 @@ export function AmbAreas() {
       <div className="sticky">
         <div className="chips" style={{ marginBottom: 8 }}>
           {visita.areas.map((area) => {
-            const c = cuentaArea(visita, area);
+            const c = cuentaArea(visita, area, config);
             return (
               <button
                 key={area}
@@ -55,22 +55,22 @@ export function AmbAreas() {
                 className={`chip ${area === areaAct ? 'on' : ''}`}
                 onClick={() => setAreaAct(area)}
               >
-                {AMB_NOMBRE_BLOQUE[area] || area}{' '}
+                {config.nombreBloque[area] || area}{' '}
                 <span className="mono" style={{ opacity: 0.75, fontSize: 11 }}>
-                  {c.den + c.NA}/{itemsDeArea(area).length}
+                  {c.den + c.NA}/{config.itemsDeArea(area).length}
                 </span>
               </button>
             );
           })}
         </div>
         <div className="row">
-          <b>{AMB_NOMBRE_BLOQUE[areaAct] || areaAct}</b>
+          <b>{config.nombreBloque[areaAct] || areaAct}</b>
           <Pill className={n.c}>{k.pct != null ? pct(k.pct) : 'Sin marcar'}</Pill>
         </div>
       </div>
       <AmbBloque
         codigo={areaAct}
-        nombre={AMB_NOMBRE_BLOQUE[areaAct] || areaAct}
+        nombre={config.nombreBloque[areaAct] || areaAct}
         items={items}
         scope={areaAct}
       />

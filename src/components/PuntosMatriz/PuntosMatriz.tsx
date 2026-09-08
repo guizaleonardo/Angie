@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import type { PuntoVerificado, TickValor } from '../../types/ambulatoria';
 import { puntoConforme, puntoEvaluado } from '../../utils/ambulatoria';
 import { Pill } from '../Pill/Pill';
@@ -52,7 +52,7 @@ function NombrePunto({
 }
 
 export function PuntosMatriz({ tipo, lista, chk, placeholder }: PuntosMatrizProps) {
-  const { addPunto, delPunto, setPuntoNombre, tickPunto } = useAmbulatoria();
+  const { addPunto, delPunto, setPuntoNombre, tickPunto } = useVisita();
 
   return (
     <>

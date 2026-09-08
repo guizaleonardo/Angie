@@ -1,18 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { AmbBloque } from '../../components/AmbBloque/AmbBloque';
 import { Pill } from '../../components/Pill/Pill';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
-import { AMB_BLOQUES_TRANSVERSALES, itemsTransversales } from '../../data/ambulatoria';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import { cuentaTransv } from '../../utils/ambulatoria';
 import { nivel } from '../../utils/calculations';
 import { pct } from '../../utils/format';
+import { pathOf } from '../../visita/config';
 
 export function AmbPracticas() {
-  const { visita } = useAmbulatoria();
+  const { visita, config } = useVisita();
   const navigate = useNavigate();
-  const items = itemsTransversales();
-  const k = cuentaTransv(visita);
+  const items = config.itemsTransversales(visita);
+  const k = cuentaTransv(visita, config);
   const n = nivel(k.pct);
+  const bloques = config.bloquesTransversales.filter((b) => items.some((i) => i.bloque === b.codigo));
 
   return (
     <>
@@ -24,16 +25,13 @@ export function AmbPracticas() {
           </Pill>
           <Pill className={n.c}>{k.pct != null ? pct(k.pct) : 'Sin marcar'}</Pill>
           <div className="spacer" />
-          <button type="button" className="btn quiet sm" onClick={() => navigate('/ambulatoria/areas')}>
+          <button type="button" className="btn quiet sm" onClick={() => navigate(pathOf(config, '/areas'))}>
             Pasar a las áreas
           </button>
         </div>
       </div>
-      <div className="aviso">
-        Se verifican una sola vez para toda la sede. Incluyen identificación del paciente, IAAS e higiene de manos,
-        medicamentos, riesgo del paciente, historia clínica y el bloque de rotulación y trazabilidad.
-      </div>
-      {AMB_BLOQUES_TRANSVERSALES.map((bloque) => (
+      <div className="aviso">{config.avisoPracticas}</div>
+      {bloques.map((bloque) => (
         <AmbBloque
           key={bloque.codigo}
           codigo={bloque.codigo}

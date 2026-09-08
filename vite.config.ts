@@ -5,7 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     watch: {
-      ignored: ['**/android/**'],
+      ignored: ['**/android/**', '**/backend/**'],
+    },
+    proxy: {
+      '/api': 'http://localhost:4000',
     },
   },
 });

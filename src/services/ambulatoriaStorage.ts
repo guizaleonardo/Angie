@@ -1,30 +1,13 @@
 import type { AccionHigiene, HallazgoAmb, ObsHigiene, PuntoVerificado, TickValor, VisitaAmb } from '../types/ambulatoria';
 import type { ItemResultado } from '../types';
-import { AREAS_DEFAULT } from '../data/ambulatoria';
-import { hoy } from '../utils/format';
+import { AMBULATORIA_CONFIG } from '../visita/config';
 import { readJSON, writeJSON } from './storage';
 
 export const AMB_STORAGE_KEY = 'rsp_sede_v1';
+export const PRI_STORAGE_KEY = 'rsp_principal_v1';
 
 export function visitaNueva(): VisitaAmb {
-  return {
-    id: `V-${hoy().replace(/-/g, '')}`,
-    sede: 'Sede Famisanar Barrancabermeja',
-    municipio: 'Barrancabermeja, Santander',
-    fecha: hoy(),
-    auditor: '',
-    acompanantes: '',
-    alcance: '',
-    concl: '',
-    areas: [...AREAS_DEFAULT],
-    transv: {},
-    areasRes: {},
-    puntosHM: [],
-    puntosRT: [],
-    obsHM: [],
-    hallazgos: [],
-    seq: 0,
-  };
+  return AMBULATORIA_CONFIG.createVisita();
 }
 
 function normalizeResultado(raw: unknown): ItemResultado | null {
@@ -99,10 +82,10 @@ function normalizeHallazgo(raw: unknown): HallazgoAmb | null {
   };
 }
 
-export function normalizeVisita(raw: unknown): VisitaAmb | null {
+export function normalizeVisita(raw: unknown, create: () => VisitaAmb = visitaNueva): VisitaAmb | null {
   if (!raw || typeof raw !== 'object') return null;
   const source = raw as Record<string, unknown>;
-  const base = visitaNueva();
+  const base = create();
   const areasResRaw =
     source.areasRes && typeof source.areasRes === 'object' && !Array.isArray(source.areasRes)
       ? (source.areasRes as Record<string, unknown>)
@@ -121,6 +104,10 @@ export function normalizeVisita(raw: unknown): VisitaAmb | null {
     alcance: String(source.alcance || ''),
     concl: String(source.concl || ''),
     areas: Array.isArray(source.areas) ? source.areas.map(String) : [...base.areas],
+    bloques:
+      Array.isArray(source.bloques) && source.bloques.length
+        ? source.bloques.map(String)
+        : [...base.bloques],
     transv: normalizeMap(source.transv),
     areasRes,
     puntosHM: Array.isArray(source.puntosHM)
@@ -136,16 +123,17 @@ export function normalizeVisita(raw: unknown): VisitaAmb | null {
       ? source.hallazgos.map(normalizeHallazgo).filter((h): h is HallazgoAmb => h !== null)
       : [],
     seq: Number.isFinite(Number(source.seq)) ? Number(source.seq) : 0,
+    userId: typeof source.userId === 'string' ? source.userId : undefined,
   };
 }
 
-export function loadVisita(): VisitaAmb {
-  const stored = readJSON<unknown>(AMB_STORAGE_KEY);
-  return normalizeVisita(stored) ?? visitaNueva();
+export function loadVisita(key = AMB_STORAGE_KEY, create: () => VisitaAmb = visitaNueva): VisitaAmb {
+  const stored = readJSON<unknown>(key);
+  return normalizeVisita(stored, create) ?? create();
 }
 
-export function saveVisita(visita: VisitaAmb): boolean {
-  return writeJSON(AMB_STORAGE_KEY, visita);
+export function saveVisita(visita: VisitaAmb, key = AMB_STORAGE_KEY): boolean {
+  return writeJSON(key, visita);
 }
 
 export function serializeVisita(visita: VisitaAmb): string {

@@ -2,7 +2,7 @@
 
 Aplicación frontend para programar, aplicar y hacer seguimiento a rondas de seguridad del paciente, según la Guía Técnica de Buenas Prácticas y la Resolución 3100 de 2019.
 
-Es una migración a React del HTML original. No hay backend, API ni base de datos: toda la información vive en el navegador.
+Es una migración a React del HTML original. El front y Android pueden seguir en local; hay un backend REST + MongoDB en `backend/` para persistencia compartida (ver `backend/README.md`).
 
 ## Requisitos
 
@@ -29,7 +29,7 @@ npm run preview
 
 Los datos de evaluación se guardan en `localStorage` con claves separadas:
 
-- Rondas hospitalarias: `rsp:v1`
+- Sede principal: `rsp_principal_v1`
 - Rondas ambulatorias: `rsp_sede_v1`
 
 - Se cargan al iniciar.
@@ -37,19 +37,22 @@ Los datos de evaluación se guardan en `localStorage` con claves separadas:
 - No se pierden al recargar, cerrar la pestaña o volver a abrir el navegador.
 - Si `localStorage` no está disponible o falla la escritura, la aplicación sigue funcionando y muestra un aviso para exportar el respaldo.
 
-Los datos maestros están en `src/data/rondas.ts` (hospitalarias) y `src/data/ambulatoria.ts` (ambulatorias) y no se modifican desde la interfaz.
+Los datos maestros están en `src/data/principal.ts` (sede principal) y `src/data/ambulatoria.ts` (ambulatorias) y no se modifican desde la interfaz.
 
-El encabezado tiene un switch **Hospitalarias / Ambulatorias** para cambiar de aplicación. Cada una tiene su propio menú, datos maestros y persistencia.
+El encabezado tiene un switch **Sede principal / Ambulatorias**. Cada una tiene su propio menú, catálogo y persistencia.
 
-## Vistas hospitalarias
+## Vistas sede principal (asistencial)
+
+Instrumento de visita de la sede principal: ronda por área o de toda la sede, con bloques transversales seleccionables.
 
 | Ruta | Contenido |
 | --- | --- |
-| `/` | Tablero con KPIs, cumplimiento por servicio/bloque, tendencia y reincidencia |
-| `/rondas` | Programar y listar rondas |
-| `/aplicar/:id` | Verificar ítems (C / NC / NA) y observaciones |
-| `/hallazgos` | Planes de mejoramiento 5W1H |
-| `/datos` | Exportar CSV, respaldo JSON, restaurar, imprimir acta y borrar datos |
+| `/` | Identificación de la visita, áreas, bloques transversales y avance |
+| `/practicas` | Prácticas seguras transversales |
+| `/areas` | Módulos de urgencias, hospitalización, UCI, cirugía, etc. |
+| `/puntos` | Observación OMS, insumos de higiene y rotulación |
+| `/hallazgos` | Planes 5W1H de la visita |
+| `/informe` | Informe general, CSV e instrumento en blanco |
 
 ## Vistas ambulatorias
 
@@ -77,9 +80,9 @@ Instrumento para sede sin camas ni hospitalización (consulta y procedimientos).
 ```text
 src/
 ├── components/     UI reutilizable (Layout, KPI, RondaItem, Toast, …)
-├── pages/          Hospitalarias y pages/ambulatoria
-├── context/        Estado hospitalario, ambulatorio y notificaciones
-├── data/           Catálogos maestros (rondas.ts y ambulatoria.ts)
+├── pages/          Instrumento de visita (sede principal y ambulatoria)
+├── context/        Estado de visita y notificaciones
+├── data/           Catálogos maestros (principal.ts y ambulatoria.ts)
 ├── hooks/          useLocalStorage
 ├── services/       localStorage, CSV y acta
 ├── types/          Tipos TypeScript

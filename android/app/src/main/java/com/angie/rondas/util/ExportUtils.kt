@@ -183,7 +183,7 @@ object ExportUtils {
 
         return """
             <!doctype html><html><head><meta charset="utf-8"><title>Acta ronda ${esc(ronda.id)}</title>
-            <style>body{font-family:sans-serif;color:#102033;max-width:820px;margin:34px auto;padding:0 22px;font-size:13px;line-height:1.5}
+            <style>body{font-family:sans-serif;color:#102033;max-width:820px;margin:34px auto;padding:0 22px 48px;font-size:13px;line-height:1.5}
             h1{font-size:17px;margin:0 0 2px}h2{font-size:13px;margin:22px 0 7px;border-bottom:2px solid #0E4A7A;padding-bottom:4px;color:#0E4A7A;text-transform:uppercase}
             table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
             th{background:#E4EEF6;text-align:left;padding:6px 7px;border:1px solid #C3CDD6}
@@ -195,7 +195,9 @@ object ExportUtils {
             .firma .caja{text-align:center}
             .firma img{height:72px;width:auto;max-width:100%;object-fit:contain;display:block;margin:0 auto 8px}
             .firma .nombre{font-weight:600;font-size:12.5px;margin-bottom:6px}
-            .firma .rol{border-top:1px solid #102033;padding-top:5px;font-size:11.5px}</style></head><body>
+            .firma .rol{border-top:1px solid #102033;padding-top:5px;font-size:11.5px}
+            .elaborado{position:fixed;bottom:5px;left:0;right:0;margin:0;text-align:center;color:#888;font-size:12px;line-height:1.4}
+            @media print{body{padding-bottom:36px}.elaborado{bottom:5px}}</style></head><body>
             <h1>Acta de ronda de seguridad del paciente</h1>
             <div class="sub">Guía Técnica BPSP (MinSalud) · Resolución 3100 de 2019</div>
             <div class="kv">
@@ -224,6 +226,7 @@ object ExportUtils {
             <div class="rol">Líder o coordinador del servicio</div>
             </div>
             </div>
+            <p class="elaborado">Elaborado por Angie Natalia Garcia Aparicio</p>
             </body></html>
         """.trimIndent()
     }

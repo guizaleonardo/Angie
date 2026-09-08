@@ -46,6 +46,7 @@ export interface VisitaAmb {
   alcance: string;
   concl: string;
   areas: string[];
+  bloques: string[];
   transv: Record<string, ItemResultado>;
   areasRes: Record<string, Record<string, ItemResultado>>;
   puntosHM: PuntoVerificado[];
@@ -53,6 +54,7 @@ export interface VisitaAmb {
   obsHM: ObsHigiene[];
   hallazgos: HallazgoAmb[];
   seq: number;
+  userId?: string;
 }
 
 export interface ConteoAmb {

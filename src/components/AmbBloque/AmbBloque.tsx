@@ -2,7 +2,7 @@ import type { Item } from '../../types';
 import { cuenta } from '../../utils/ambulatoria';
 import { nivel } from '../../utils/calculations';
 import { pct } from '../../utils/format';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import { AmbItem } from '../AmbItem/AmbItem';
 import { Pill } from '../Pill/Pill';
 
@@ -14,7 +14,7 @@ interface AmbBloqueProps {
 }
 
 export function AmbBloque({ codigo, nombre, items, scope }: AmbBloqueProps) {
-  const { visita } = useAmbulatoria();
+  const { visita } = useVisita();
   if (!items.length) return null;
   const map = scope === 'T' ? visita.transv : visita.areasRes[scope] || {};
   const k = cuenta(map, items.map((i) => i.id));

@@ -1,10 +1,11 @@
-import { ACCIONES, AMB_NOMBRE_BLOQUE, CHK_HM, CHK_RT, itemAmbPorId, itemsDeArea, itemsTransversales } from '../data/ambulatoria';
+import { ACCIONES, CHK_HM, CHK_RT } from '../data/ambulatoria';
 import type { Item } from '../types';
 import type { VisitaAmb } from '../types/ambulatoria';
 import { resDe } from '../utils/ambulatoria';
 import { downloadFile, toCsv } from '../utils/csv';
+import { AMBULATORIA_CONFIG, type VisitaCatalog } from '../visita/config';
 
-export function exportCsvDetalleAmb(visita: VisitaAmb): void {
+export function exportCsvDetalleAmb(visita: VisitaAmb, catalog: VisitaCatalog = AMBULATORIA_CONFIG): void {
   const filas: unknown[][] = [[
     'Sede',
     'Fecha',
@@ -25,7 +26,7 @@ export function exportCsvDetalleAmb(visita: VisitaAmb): void {
     filas.push([
       visita.sede,
       visita.fecha,
-      scope === 'T' ? 'Toda la sede' : AMB_NOMBRE_BLOQUE[scope] || scope,
+      scope === 'T' ? 'Toda la sede' : catalog.nombreBloque[scope] || scope,
       item.bloque,
       item.bloque_nombre,
       item.id,
@@ -37,8 +38,8 @@ export function exportCsvDetalleAmb(visita: VisitaAmb): void {
     ]);
   };
 
-  itemsTransversales().forEach((item) => add('T', item));
-  visita.areas.forEach((area) => itemsDeArea(area).forEach((item) => add(area, item)));
+  catalog.itemsTransversales(visita).forEach((item) => add('T', item));
+  visita.areas.forEach((area) => catalog.itemsDeArea(area).forEach((item) => add(area, item)));
 
   visita.puntosHM.forEach((punto) => {
     if (!punto.c.some((x) => x != null)) return;
@@ -93,7 +94,7 @@ export function exportCsvDetalleAmb(visita: VisitaAmb): void {
   downloadFile('ronda_sede_detalle.csv', toCsv(filas), 'text/csv;charset=utf-8');
 }
 
-export function exportCsvPlanesAmb(visita: VisitaAmb): void {
+export function exportCsvPlanesAmb(visita: VisitaAmb, catalog: VisitaCatalog = AMBULATORIA_CONFIG): void {
   const filas: unknown[][] = [[
     'ID',
     'Sede',
@@ -113,7 +114,7 @@ export function exportCsvPlanesAmb(visita: VisitaAmb): void {
     'Origen del texto',
   ]];
   visita.hallazgos.forEach((h) => {
-    const item = itemAmbPorId(h.itemId);
+    const item = catalog.itemPorId(h.itemId);
     filas.push([
       h.id,
       visita.sede,

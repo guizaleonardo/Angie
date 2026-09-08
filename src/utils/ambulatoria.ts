@@ -1,4 +1,3 @@
-import { AMB_BLOQUES_TRANSVERSALES, AMB_NOMBRE_BLOQUE, itemsDeArea, itemsTransversales } from '../data/ambulatoria';
 import type { Item, ItemResultado } from '../types';
 import type {
   Adherencia,
@@ -10,6 +9,7 @@ import type {
   TickValor,
   VisitaAmb,
 } from '../types/ambulatoria';
+import type { VisitaCatalog } from '../visita/config';
 import { hoy } from './format';
 
 export function resDe(visita: VisitaAmb, scope: string, id: string): Partial<ItemResultado> {
@@ -31,24 +31,24 @@ export function cuenta(obj: Record<string, ItemResultado> | undefined, ids: stri
   return { C, NC, NA, den: C + NC, pct: C + NC ? C / (C + NC) : null };
 }
 
-export function cuentaTransv(visita: VisitaAmb): ConteoAmb {
-  return cuenta(visita.transv, itemsTransversales().map((i) => i.id));
+export function cuentaTransv(visita: VisitaAmb, catalog: VisitaCatalog): ConteoAmb {
+  return cuenta(visita.transv, catalog.itemsTransversales(visita).map((i) => i.id));
 }
 
-export function cuentaArea(visita: VisitaAmb, codigo: string): ConteoAmb {
-  return cuenta(visita.areasRes[codigo] || {}, itemsDeArea(codigo).map((i) => i.id));
+export function cuentaArea(visita: VisitaAmb, codigo: string, catalog: VisitaCatalog): ConteoAmb {
+  return cuenta(visita.areasRes[codigo] || {}, catalog.itemsDeArea(codigo).map((i) => i.id));
 }
 
-export function cuentaGlobal(visita: VisitaAmb): ConteoAmb {
+export function cuentaGlobal(visita: VisitaAmb, catalog: VisitaCatalog): ConteoAmb {
   let C = 0;
   let NC = 0;
   let NA = 0;
-  const t = cuentaTransv(visita);
+  const t = cuentaTransv(visita, catalog);
   C += t.C;
   NC += t.NC;
   NA += t.NA;
   visita.areas.forEach((area) => {
-    const k = cuentaArea(visita, area);
+    const k = cuentaArea(visita, area, catalog);
     C += k.C;
     NC += k.NC;
     NA += k.NA;
@@ -103,13 +103,13 @@ export function adherencia(obs: ObsHigiene[], filtro?: (o: ObsHigiene) => boolea
   };
 }
 
-export function totalNC(visita: VisitaAmb): number {
+export function totalNC(visita: VisitaAmb, catalog: VisitaCatalog): number {
   let n = 0;
-  itemsTransversales().forEach((item) => {
+  catalog.itemsTransversales(visita).forEach((item) => {
     if (resDe(visita, 'T', item.id).r === 'NC') n += 1;
   });
   visita.areas.forEach((area) => {
-    itemsDeArea(area).forEach((item) => {
+    catalog.itemsDeArea(area).forEach((item) => {
       if (resDe(visita, area, item.id).r === 'NC') n += 1;
     });
   });
@@ -120,19 +120,21 @@ export function sinValidar(visita: VisitaAmb): number {
   return visita.hallazgos.filter((h) => h.sugerido && h.estado !== 'Cerrado').length;
 }
 
-export function bloquesResumen(visita: VisitaAmb): ResumenBloqueAmb[] {
+export function bloquesResumen(visita: VisitaAmb, catalog: VisitaCatalog): ResumenBloqueAmb[] {
   const out: ResumenBloqueAmb[] = [];
-  AMB_BLOQUES_TRANSVERSALES.forEach((bloque) => {
-    const ids = itemsTransversales().filter((i) => i.bloque === bloque.codigo).map((i) => i.id);
+  const activos = new Set(visita.bloques.length ? visita.bloques : catalog.ordenBloques);
+  catalog.bloquesTransversales.forEach((bloque) => {
+    if (!activos.has(bloque.codigo)) return;
+    const ids = catalog.itemsTransversales(visita).filter((i) => i.bloque === bloque.codigo).map((i) => i.id);
     const k = cuenta(visita.transv, ids);
     if (k.den + k.NA) out.push({ cod: bloque.codigo, nom: bloque.nombre, ...k, tipo: 'Transversal' });
   });
   visita.areas.forEach((area) => {
-    const k = cuentaArea(visita, area);
+    const k = cuentaArea(visita, area, catalog);
     if (k.den + k.NA) {
       out.push({
         cod: area,
-        nom: AMB_NOMBRE_BLOQUE[area] || area,
+        nom: catalog.nombreBloque[area] || area,
         ...k,
         tipo: 'Área',
       });
@@ -141,16 +143,16 @@ export function bloquesResumen(visita: VisitaAmb): ResumenBloqueAmb[] {
   return out;
 }
 
-export function ncsVisita(visita: VisitaAmb): Array<{ area: string; item: Item; obs: string }> {
+export function ncsVisita(visita: VisitaAmb, catalog: VisitaCatalog): Array<{ area: string; item: Item; obs: string }> {
   const ncs: Array<{ area: string; item: Item; obs: string }> = [];
-  itemsTransversales().forEach((item) => {
+  catalog.itemsTransversales(visita).forEach((item) => {
     const v = resDe(visita, 'T', item.id);
     if (v.r === 'NC') ncs.push({ area: 'Toda la sede', item, obs: v.obs || '' });
   });
   visita.areas.forEach((area) => {
-    itemsDeArea(area).forEach((item) => {
+    catalog.itemsDeArea(area).forEach((item) => {
       const v = resDe(visita, area, item.id);
-      if (v.r === 'NC') ncs.push({ area: AMB_NOMBRE_BLOQUE[area] || area, item, obs: v.obs || '' });
+      if (v.r === 'NC') ncs.push({ area: catalog.nombreBloque[area] || area, item, obs: v.obs || '' });
     });
   });
   return ncs;

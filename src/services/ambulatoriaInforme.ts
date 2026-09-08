@@ -1,17 +1,11 @@
 import { LOGO_SRC } from '../components/BrandLogo/BrandLogo';
-import {
-  AMB_NOMBRE_BLOQUE,
-  CARGOS,
-  CHK_HM,
-  CHK_RT,
-  MOMENTOS,
-  itemsDeArea,
-  itemsTransversales,
-} from '../data/ambulatoria';
+import { CARGOS, CHK_HM, CHK_RT, MOMENTOS } from '../data/ambulatoria';
+import type { FirmasActa } from '../types';
 import type { VisitaAmb } from '../types/ambulatoria';
 import { adherencia, bloquesResumen, cuentaGlobal, ncsVisita, puntosResumen } from '../utils/ambulatoria';
 import { nivel } from '../utils/calculations';
 import { esc, fmtF, pct } from '../utils/format';
+import { AMBULATORIA_CONFIG, type VisitaConfig } from '../visita/config';
 
 function tabla(headers: string[], rows: string): string {
   return `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
@@ -24,13 +18,17 @@ function celdaTick(valor: unknown): string {
   return '—';
 }
 
-export function abrirInformeAmb(visita: VisitaAmb): boolean {
-  const g = cuentaGlobal(visita);
+export function abrirInformeAmb(
+  visita: VisitaAmb,
+  firmas: FirmasActa,
+  catalog: VisitaConfig = AMBULATORIA_CONFIG,
+): boolean {
+  const g = cuentaGlobal(visita, catalog);
   const n = nivel(g.pct);
-  const res = bloquesResumen(visita);
+  const res = bloquesResumen(visita, catalog);
   const rh = puntosResumen(visita.puntosHM, CHK_HM);
   const rr = puntosResumen(visita.puntosRT, CHK_RT);
-  const ncs = ncsVisita(visita);
+  const ncs = ncsVisita(visita, catalog);
   const orden: Record<string, number> = { Alta: 0, Media: 1, Baja: 2 };
   const planes = [...visita.hallazgos].sort((a, b) => (orden[a.criticidad] ?? 9) - (orden[b.criticidad] ?? 9));
   const adh = adherencia(visita.obsHM);
@@ -88,7 +86,7 @@ export function abrirInformeAmb(visita: VisitaAmb): boolean {
     : '<p>No se registraron puntos de rotulación en esta visita.</p>';
 
   popup.document.write(`<!doctype html><meta charset="utf-8"><title>Informe ronda de seguridad — ${esc(visita.sede)}</title>
-  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#12212F;max-width:840px;margin:34px auto;padding:0 24px;font-size:12.5px;line-height:1.5}
+  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#12212F;max-width:840px;margin:34px auto;padding:0 24px 48px;font-size:12.5px;line-height:1.5}
   h1{font-size:18px;margin:0 0 3px}
   h2{font-size:12.5px;margin:24px 0 8px;border-bottom:2px solid #1B4F8A;padding-bottom:4px;color:#1B4F8A;text-transform:uppercase;letter-spacing:.06em}
   .marca{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#1B4F8A;font-weight:700;margin-bottom:5px}
@@ -107,8 +105,12 @@ export function abrirInformeAmb(visita: VisitaAmb): boolean {
   .caja .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:#7A8B9C;margin-top:3px;font-weight:600}
   .alerta{color:#B3261E;font-weight:700}
   .firma{margin-top:46px;display:grid;grid-template-columns:1fr 1fr;gap:46px}
-  .firma div{border-top:1px solid #12212F;padding-top:5px;font-size:11px;text-align:center}
-  @media print{body{margin:0}h2{break-after:avoid}table{break-inside:auto}}</style>
+  .firma .caja{text-align:center}
+  .firma img{height:72px;width:auto;max-width:100%;object-fit:contain;display:block;margin:0 auto 8px}
+  .firma .nombre{font-weight:600;font-size:12.5px;margin-bottom:6px}
+  .firma .rol{border-top:1px solid #12212F;padding-top:5px;font-size:11px}
+  .elaborado{position:fixed;bottom:5px;left:0;right:0;margin:0;text-align:center;color:#888;font-size:12px;line-height:1.4}
+  @media print{body{margin:0;padding-bottom:36px}h2{break-after:avoid}table{break-inside:auto}.elaborado{bottom:5px}}</style>
   <div class="acta-cab"><img src="${esc(logo)}" alt="Clínica Piedecuesta S.A."><div>
   <div class="marca">Clínica Piedecuesta S.A.</div>
   <h1>Informe general de ronda de seguridad del paciente</h1></div></div>
@@ -121,7 +123,7 @@ export function abrirInformeAmb(visita: VisitaAmb): boolean {
     <b>Fecha de la visita</b><span>${fmtF(visita.fecha)}</span>
     <b>Auditor</b><span>${esc(visita.auditor) || '—'}</span>
     <b>Acompañantes</b><span>${esc(visita.acompanantes) || '—'}</span>
-    <b>Áreas verificadas</b><span>${visita.areas.length ? visita.areas.map((a) => esc(AMB_NOMBRE_BLOQUE[a] || a)).join(' · ') : '—'}</span>
+    <b>Áreas verificadas</b><span>${visita.areas.length ? visita.areas.map((a) => esc(catalog.nombreBloque[a] || a)).join(' · ') : '—'}</span>
     <b>Alcance</b><span>${esc(visita.alcance) || 'Verificación de prácticas seguras transversales y módulos específicos de las áreas presentes en la sede.'}</span>
   </div>
 
@@ -188,25 +190,41 @@ export function abrirInformeAmb(visita: VisitaAmb): boolean {
 
   <h2>9. Conclusiones y compromisos</h2>
   <p>${esc(visita.concl) || '—'}</p>
-  <div class="firma"><div>${esc(visita.auditor) || 'Líder de seguridad del paciente'}</div><div>Responsable de la sede</div></div>
+  <div class="firma">
+    <div class="caja">
+      <img src="${firmas.seguridad.imagen}" alt="Firma del líder de seguridad del paciente">
+      <div class="nombre">${esc(firmas.seguridad.nombre)}</div>
+      <div class="rol">Líder de seguridad del paciente</div>
+    </div>
+    <div class="caja">
+      <img src="${firmas.coordinador.imagen}" alt="Firma del responsable de la sede">
+      <div class="nombre">${esc(firmas.coordinador.nombre)}</div>
+      <div class="rol">Responsable de la sede</div>
+    </div>
+  </div>
+  <p class="elaborado">Elaborado por Angie Natalia Garcia Aparicio</p>
   <script>window.onload=function(){window.print()}<\/script>`);
   popup.document.close();
   return true;
 }
 
-export function abrirInstrumentoBlanco(visita: VisitaAmb): boolean {
+export function abrirInstrumentoBlanco(
+  visita: VisitaAmb,
+  catalog: VisitaConfig = AMBULATORIA_CONFIG,
+): boolean {
   const popup = window.open('', '_blank');
   if (!popup) return false;
 
-  const grupos: Array<{ t: string; its: ReturnType<typeof itemsTransversales> }> = [];
-  const bl = [...new Set(itemsTransversales().map((i) => i.bloque))];
+  const itemsTx = catalog.itemsTransversales(visita);
+  const grupos: Array<{ t: string; its: typeof itemsTx }> = [];
+  const bl = [...new Set(itemsTx.map((i) => i.bloque))];
   bl.forEach((b) =>
     grupos.push({
-      t: `Transversal · ${b} — ${AMB_NOMBRE_BLOQUE[b] || b}`,
-      its: itemsTransversales().filter((i) => i.bloque === b),
+      t: `Transversal · ${b} — ${catalog.nombreBloque[b] || b}`,
+      its: itemsTx.filter((i) => i.bloque === b),
     }),
   );
-  visita.areas.forEach((a) => grupos.push({ t: `Área · ${AMB_NOMBRE_BLOQUE[a] || a}`, its: itemsDeArea(a) }));
+  visita.areas.forEach((a) => grupos.push({ t: `Área · ${catalog.nombreBloque[a] || a}`, its: catalog.itemsDeArea(a) }));
 
   const fila = (i: (typeof grupos)[number]['its'][number]) =>
     `<tr><td class="id">${i.id}</td><td>${esc(i.item)}<div class="fv">${esc(i.fuente)}</div></td>
@@ -221,7 +239,7 @@ export function abrirInstrumentoBlanco(visita: VisitaAmb): boolean {
     </tbody></table>`;
 
   popup.document.write(`<!doctype html><meta charset="utf-8"><title>Instrumento de ronda — ${esc(visita.sede)}</title>
-  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#12212F;max-width:900px;margin:24px auto;padding:0 20px;font-size:11px;line-height:1.4}
+  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#12212F;max-width:900px;margin:24px auto;padding:0 20px 48px;font-size:11px;line-height:1.4}
   h1{font-size:16px;margin:0 0 3px}
   h2{font-size:11px;margin:16px 0 5px;background:#E4EDF8;color:#1B4F8A;padding:5px 8px;border-left:3px solid #1B4F8A;text-transform:uppercase;letter-spacing:.05em}
   .marca{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#1B4F8A;font-weight:700}
@@ -236,10 +254,11 @@ export function abrirInstrumentoBlanco(visita: VisitaAmb): boolean {
   .bx{text-align:center;font-size:15px;width:26px}
   .ob{width:190px}
   .pt td{height:19px}
-  @media print{body{margin:0;font-size:10px}h2{break-after:avoid}tr{break-inside:avoid}}</style>
+  .elaborado{position:fixed;bottom:5px;left:0;right:0;margin:0;text-align:center;color:#888;font-size:12px;line-height:1.4}
+  @media print{body{margin:0;padding-bottom:36px;font-size:10px}h2{break-after:avoid}tr{break-inside:avoid}.elaborado{bottom:5px}}</style>
   <div class="marca">Clínica Piedecuesta S.A.</div>
   <h1>Ronda de seguridad del paciente — instrumento de verificación</h1>
-  <div class="sub">${esc(visita.sede)} · ${esc(visita.municipio)} · Sede ambulatoria<br>
+  <div class="sub">${esc(visita.sede)} · ${esc(visita.municipio)} · ${esc(catalog.ambitoLabel)}<br>
   Guía Técnica de Buenas Prácticas para la Seguridad del Paciente (MinSalud) · Resolución 3100 de 2019</div>
   <div class="kv"><span>Fecha: ${fmtF(visita.fecha)}</span><span>Auditor: ${esc(visita.auditor) || '&nbsp;'}</span>
     <span>Acompañantes: ${esc(visita.acompanantes) || '&nbsp;'}</span><span>Hora de inicio / cierre:&nbsp;</span></div>
@@ -269,6 +288,7 @@ export function abrirInstrumentoBlanco(visita: VisitaAmb): boolean {
   <div style="margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
     <div style="border-top:1px solid #12212F;padding-top:4px;text-align:center;font-size:10px">Auditor</div>
     <div style="border-top:1px solid #12212F;padding-top:4px;text-align:center;font-size:10px">Responsable de la sede</div></div>
+  <p class="elaborado">Elaborado por Angie Natalia Garcia Aparicio</p>
   <script>window.onload=function(){window.print()}<\/script>`);
   popup.document.close();
   return true;

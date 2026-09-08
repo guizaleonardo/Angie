@@ -20,7 +20,7 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[], firmas: FirmasAct
   if (!popup) return false;
 
   popup.document.write(`<!doctype html><meta charset="utf-8"><title>Acta ronda ${esc(ronda.id)}</title>
-  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#102033;max-width:820px;margin:34px auto;padding:0 22px;font-size:13px;line-height:1.5}
+  <style>body{font-family:"IBM Plex Sans",Arial,sans-serif;color:#102033;max-width:820px;margin:34px auto;padding:0 22px 48px;font-size:13px;line-height:1.5}
   h1{font-size:17px;margin:0 0 2px}h2{font-size:13px;margin:22px 0 7px;border-bottom:2px solid #0E4A7A;padding-bottom:4px;color:#0E4A7A;text-transform:uppercase;letter-spacing:.05em}
   .sub{color:#666;font-size:11.5px;margin-bottom:16px}
   table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
@@ -35,7 +35,8 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[], firmas: FirmasAct
   .firma .rol{border-top:1px solid #102033;padding-top:5px;font-size:11.5px}
   .acta-cab{display:flex;align-items:center;gap:16px;margin-bottom:18px}
   .acta-cab img{height:58px;width:auto;max-width:240px;object-fit:contain}
-  @media print{body{margin:0}}</style>
+  .elaborado{position:fixed;bottom:5px;left:0;right:0;margin:0;text-align:center;color:#888;font-size:12px;line-height:1.4}
+  @media print{body{margin:0;padding-bottom:36px}.elaborado{bottom:5px}}</style>
   <div class="acta-cab">
     <img src="${esc(`${window.location.origin}${LOGO_SRC}`)}" alt="Clínica Piedecuesta S.A.">
     <div>
@@ -83,6 +84,7 @@ export function abrirActa(ronda: Ronda, hallazgos: Hallazgo[], firmas: FirmasAct
       <div class="rol">Líder o coordinador del servicio</div>
     </div>
   </div>
+  <p class="elaborado">Elaborado por Angie Natalia Garcia Aparicio</p>
   <script>window.onload=function(){window.print()}<\/script>`);
   popup.document.close();
   return true;

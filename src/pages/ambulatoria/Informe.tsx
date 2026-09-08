@@ -1,40 +1,47 @@
+import { useState } from 'react';
 import { Bar } from '../../components/Bar/Bar';
 import { Card } from '../../components/Card/Card';
 import { DebouncedField } from '../../components/DebouncedField/DebouncedField';
+import { FirmaActaModal } from '../../components/FirmaActaModal/FirmaActaModal';
 import { KPI } from '../../components/KPI/KPI';
 import { Pill } from '../../components/Pill/Pill';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import { useToast } from '../../context/ToastContext';
 import { CHK_HM, CHK_RT } from '../../data/ambulatoria';
 import { exportCsvDetalleAmb, exportCsvPlanesAmb, exportRespaldoAmb } from '../../services/ambulatoriaExport';
 import { abrirInformeAmb } from '../../services/ambulatoriaInforme';
+import type { FirmasActa } from '../../types';
 import { adherencia, bloquesResumen, cuentaGlobal, puntosResumen } from '../../utils/ambulatoria';
 import { nivel } from '../../utils/calculations';
 import { pct } from '../../utils/format';
 
 export function AmbInforme() {
-  const { visita, setCampo } = useAmbulatoria();
+  const { visita, config, setCampo } = useVisita();
   const { toast } = useToast();
-  const g = cuentaGlobal(visita);
+  const [firmasAbiertas, setFirmasAbiertas] = useState(false);
+  const g = cuentaGlobal(visita, config);
   const n = nivel(g.pct);
   const rh = puntosResumen(visita.puntosHM, CHK_HM);
   const rr = puntosResumen(visita.puntosRT, CHK_RT);
-  const res = bloquesResumen(visita);
+  const res = bloquesResumen(visita, config);
   const altas = visita.hallazgos.filter((x) => x.criticidad === 'Alta').length;
 
   const avisoPopup = () => toast('El navegador bloqueó la ventana. Permita las ventanas emergentes.');
 
-  const onInforme = () => {
-    if (!abrirInformeAmb(visita)) avisoPopup();
+  const onInforme = () => setFirmasAbiertas(true);
+
+  const onConfirmarFirmas = (firmas: FirmasActa) => {
+    setFirmasAbiertas(false);
+    if (!abrirInformeAmb(visita, firmas, config)) avisoPopup();
   };
 
   const onDetalle = () => {
-    exportCsvDetalleAmb(visita);
+    exportCsvDetalleAmb(visita, config);
     toast('Archivo descargado');
   };
 
   const onPlanes = () => {
-    exportCsvPlanesAmb(visita);
+    exportCsvPlanesAmb(visita, config);
     toast('Archivo descargado');
   };
 
@@ -86,6 +93,18 @@ export function AmbInforme() {
           </button>
         </div>
       </Card>
+      {firmasAbiertas ? (
+        <FirmaActaModal
+          liderSugerido={visita.auditor}
+          titulo="Firmas del informe"
+          hint="Antes de generar el documento deben firmar el líder de seguridad del paciente y el responsable de la sede."
+          labelSeguridad="Líder de seguridad del paciente"
+          labelCoordinador="Responsable de la sede"
+          confirmLabel="Generar informe"
+          onCancel={() => setFirmasAbiertas(false)}
+          onConfirm={onConfirmarFirmas}
+        />
+      ) : null}
 
       <Card>
         <h2>Vista previa por bloque y área</h2>

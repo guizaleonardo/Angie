@@ -4,7 +4,7 @@ import { Card } from '../../components/Card/Card';
 import { KPI } from '../../components/KPI/KPI';
 import { Pill } from '../../components/Pill/Pill';
 import { PuntosMatriz } from '../../components/PuntosMatriz/PuntosMatriz';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import { CARGOS, CHK_HM, CHK_RT, MOMENTOS } from '../../data/ambulatoria';
 import type { AccionHigiene } from '../../types/ambulatoria';
 import { adherencia, puntosResumen } from '../../utils/ambulatoria';
@@ -45,7 +45,7 @@ function ResumenPuntos({
 }
 
 export function AmbPuntos() {
-  const { visita, addObsHM, delObsHM } = useAmbulatoria();
+  const { visita, addObsHM, delObsHM } = useVisita();
   const [obsCargo, setObsCargo] = useState<string>('Médico');
   const [obsMomento, setObsMomento] = useState('1');
   const g = adherencia(visita.obsHM);

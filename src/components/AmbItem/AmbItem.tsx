@@ -2,7 +2,8 @@ import { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Item, ResultadoEstado } from '../../types';
 import { resDe } from '../../utils/ambulatoria';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
+import { useVisita } from '../../context/AmbulatoriaContext';
+import { pathOf } from '../../visita/config';
 import { ObservationInput } from '../ObservationInput/ObservationInput';
 import { StatusSelector } from '../StatusSelector/StatusSelector';
 
@@ -18,7 +19,7 @@ function placeholder(estado?: ResultadoEstado): string {
 }
 
 export function AmbItem({ item, scope }: AmbItemProps) {
-  const { visita, marcar, setObs, crearPlan, tienePlan } = useAmbulatoria();
+  const { visita, config, marcar, setObs, crearPlan, tienePlan } = useVisita();
   const navigate = useNavigate();
   const valor = resDe(visita, scope, item.id);
   const itemRef = useRef<HTMLDivElement>(null);
@@ -60,7 +61,7 @@ export function AmbItem({ item, scope }: AmbItemProps) {
             plan ? (
               <div className="row" style={{ marginTop: 6 }}>
                 <span className="pill p-si">Plan formulado</span>
-                <button type="button" className="btn quiet sm" onClick={() => navigate('/ambulatoria/hallazgos')}>
+                <button type="button" className="btn quiet sm" onClick={() => navigate(pathOf(config, '/hallazgos'))}>
                   Ver plan
                 </button>
               </div>
@@ -71,7 +72,7 @@ export function AmbItem({ item, scope }: AmbItemProps) {
                   className="btn sm"
                   onClick={() => {
                     crearPlan(scope, item.id);
-                    navigate('/ambulatoria/hallazgos');
+                    navigate(pathOf(config, '/hallazgos'));
                   }}
                 >
                   Formular plan 5W1H

@@ -4,9 +4,8 @@ import { DebouncedField } from '../../components/DebouncedField/DebouncedField';
 import { EmptyState } from '../../components/EmptyState/EmptyState';
 import { KPI } from '../../components/KPI/KPI';
 import { Pill } from '../../components/Pill/Pill';
-import { useAmbulatoria } from '../../context/AmbulatoriaContext';
+import { useVisita } from '../../context/AmbulatoriaContext';
 import { useToast } from '../../context/ToastContext';
-import { itemAmbPorId } from '../../data/ambulatoria';
 import { CRITICIDADES } from '../../types';
 import type { FiltroHallazgosAmb, HallazgoAmb, HallazgoAmbCampo } from '../../types/ambulatoria';
 import { sinValidar, totalNC } from '../../utils/ambulatoria';
@@ -20,10 +19,10 @@ const FILTROS: Array<[FiltroHallazgosAmb, string]> = [
 const ORDEN: Record<string, number> = { Alta: 0, Media: 1, Baja: 2 };
 
 export function AmbHallazgos() {
-  const { visita, generarPendientes, setHallazgoCampo, validarHallazgo, borrarHallazgo } = useAmbulatoria();
+  const { visita, config, generarPendientes, setHallazgoCampo, validarHallazgo, borrarHallazgo } = useVisita();
   const { toast } = useToast();
   const [filtro, setFiltro] = useState<FiltroHallazgosAmb>('todos');
-  const nc = totalNC(visita);
+  const nc = totalNC(visita, config);
   const pendientes = nc - visita.hallazgos.length;
   const sinVal = sinValidar(visita);
 
@@ -111,7 +110,8 @@ function HallazgoAmbCard({
   onValidar: () => void;
   onBorrar: () => void;
 }) {
-  const item = itemAmbPorId(hallazgo.itemId);
+  const { config } = useVisita();
+  const item = config.itemPorId(hallazgo.itemId);
   const set = (campo: HallazgoAmbCampo) => (valor: string) => onChange(hallazgo.id, campo, valor);
 
   return (
