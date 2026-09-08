@@ -8,7 +8,11 @@ export default defineConfig({
       ignored: ['**/android/**', '**/backend/**'],
     },
     proxy: {
-      '/api': 'https://angie-t42s.onrender.com',
+      '/api': {
+        target: 'https://angie-t42s.onrender.com',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 });
